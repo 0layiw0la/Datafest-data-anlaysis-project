@@ -1,0 +1,59 @@
+-- Data quality assessment
+-- check for null timestamp in crop table
+SELECT * FROM DADATATHON.CROP WHERE TIMESTAMP IS NULL;
+
+-- Removing rows where timestamp is null because the other columns are also null and they make up a small percentage of data
+DELETE FROM DADATATHON.CROP_DATA_TABLE WHERE TIMESTAMP IS NULL;
+
+/*BECAUSE IT'S CATEGORICAL DATA AND THERE IS NO WAY TO BE SURE AND WE WONT BE CONSIDERING THIS IN ANALYSIS WE REPLACE DESCRIPTION WITH NA */
+UPDATE DFA23RAWDATA.DADATATHON.PEST SET PEST_DESCRIPTION = 'NA' WHERE PEST_DESCRIPTION IS NULL 
+
+
+-- SQL to view tables then download
+use warehouse dfa23;
+use database dfa23rawdata;
+select * from DFA23RAWDATA.DADATATHON.CROP;
+select * from DFA23RAWDATA.DADATATHON.CROP_TYPE;
+select * from DFA23RAWDATA.DADATATHON.GROWTH_STAGE;
+select * from DFA23RAWDATA.DADATATHON.IRRIGATION;
+select * from DFA23RAWDATA.DADATATHON.IRRIGATION_METHON;
+select * from DFA23RAWDATA.DADATATHON.LOCATION;
+select * from DFA23RAWDATA.DADATATHON.PEST;
+select * from DFA23RAWDATA.DADATATHON.PEST_TYPE;
+select * from DFA23RAWDATA.DADATATHON.SENSOR;
+select * from DFA23RAWDATA.DADATATHON.SOIL;
+select * from DFA23RAWDATA.DADATATHON.WATER_SOURCE;
+select * from DFA23RAWDATA.DADATATHON.WEATHER;
+select * from DFA23RAWDATA.DADATATHON.WEATHER_CONDITION;
+
+
+
+
+dax
+Quartile_Elevation = 
+VAR Quartile1 = PERCENTILE.INC('location'[ELEVATION], 0.25)
+VAR Quartile2 = PERCENTILE.INC('location'[ELEVATION], 0.5)
+VAR Quartile3 = PERCENTILE.INC('location'[ELEVATION], 0.75)
+RETURN
+    SWITCH(
+        TRUE(),
+        'location'[ELEVATION] <= Quartile1, "Low Elevation",
+        'location'[ELEVATION] <= Quartile2, "Medium-Low Elevation",
+        'location'[ELEVATION] <= Quartile3, "Medium-High Elevation",
+        'location'[ELEVATION] > Quartile3, "High Elevation"
+    )
+
+
+
+
+weighted pest severity = 
+IF(
+   pest[PEST_SEVERITY] == "Medium", 2,
+   IF(
+      pest[PEST_SEVERITY] == "Low", 1,
+      IF(
+         pest[PEST_SEVERITY] == "High",3,
+         BLANK()
+      )
+   )
+)
